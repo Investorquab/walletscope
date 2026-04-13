@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WalletScope — On-Chain Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e4e2da;
+    --border-strong: #c8c5bc;
+    --text: #1a1917;
+    --text-muted: #6b6860;
+    --text-faint: #a09d97;
+    --green: #1a7a4a;
+    --green-light: #eaf5ee;
+    --green-mid: #2ea865;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --amber: #b45309;
+    --amber-light: #fef9ee;
+    --purple: #5b4fcf;
+    --purple-light: #f0effe;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo span { color: var(--green-mid); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--green-light);
+    color: var(--green);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  /* ── SEARCH ── */
+  .search-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .search-row input {
+    flex: 1;
+    padding: 11px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-row input:focus { border-color: var(--green-mid); }
+  .search-row input::placeholder { color: var(--text-faint); }
+
+  .btn {
+    padding: 11px 20px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--text); color: #fff; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .btn-ghost:hover { border-color: var(--border-strong); color: var(--text); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { opacity: 0.88; }
+
+  .wallet-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .wallet-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px 4px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .wallet-tag .remove {
+    cursor: pointer;
+    color: var(--text-faint);
+    font-size: 14px;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+  .wallet-tag .remove:hover { color: var(--red); }
+
+  .chain-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .pill {
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pill.active {
+    background: var(--text);
+    color: #fff;
+    border-color: var(--text);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    margin-bottom: 1.5rem;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .tab-btn.active {
+    background: var(--text);
+    color: #fff;
+  }
+  .tab-btn:hover:not(.active) { background: var(--bg); color: var(--text); }
+
+  /* ── METRICS GRID ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .metric-card .label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .metric-card .value {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .metric-card .sub {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .up { color: var(--green) !important; }
+  .down { color: var(--red) !important; }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── TRANSACTIONS ── */
+  .tx-list { padding: 0; }
+
+  .tx-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-row:hover { background: var(--bg); }
+
+  .tx-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .tx-icon.in { background: var(--green-light); color: var(--green); }
+  .tx-icon.out { background: var(--red-light); color: var(--red); }
+  .tx-icon.swap { background: var(--purple-light); color: var(--purple); }
+  .tx-icon.yield { background: var(--amber-light); color: var(--amber); }
+
+  .tx-main { flex: 1; min-width: 0; }
+  .tx-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .tx-meta { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tx-right { text-align: right; flex-shrink: 0; }
+  .tx-amount { font-size: 13px; font-weight: 500; font-family: var(--mono); }
+  .tx-time { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+  .tx-category {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .cat-income { background: var(--green-light); color: var(--green); }
+  .cat-expense { background: var(--red-light); color: var(--red); }
+  .cat-swap { background: var(--purple-light); color: var(--purple); }
+  .cat-yield { background: var(--amber-light); color: var(--amber); }
+
+  /* ── AI INSIGHT ── */
+  .ai-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ai-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green-mid);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .ai-body { padding: 18px; }
+
+  .ai-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 14px;
+    white-space: pre-wrap;
+  }
+
+  .ai-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .chip:hover { border-color: var(--green-mid); color: var(--green); }
+
+  /* ── TAX REPORT ── */
+  .tax-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tax-item { }
+  .tax-item .t-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 4px; }
+  .tax-item .t-value { font-size: 18px; font-weight: 500; color: var(--text); }
+  .tax-item .t-sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+  .tax-breakdown { padding: 18px; }
+  .tax-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .tax-row:last-child { border-bottom: none; }
+  .tax-row .t-cat { color: var(--text-muted); }
+  .tax-row .t-val { font-weight: 500; font-family: var(--mono); }
+  .tax-row .t-count { font-size: 11px; color: var(--text-faint); }
+
+  /* ── RISK SCORE ── */
+  .risk-bar-wrap {
+    padding: 18px;
+  }
+
+  .risk-score-big {
+    font-size: 48px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .risk-label-big {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .risk-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .risk-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--green-mid), var(--amber), var(--red));
+    transition: width 0.8s ease;
+  }
+
+  .risk-flags {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .risk-flag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .flag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .flag-dot.ok { background: var(--green-mid); }
+  .flag-dot.warn { background: var(--amber); }
+  .flag-dot.bad { background: var(--red); }
+
+  /* ── EMPTY / LOADING ── */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-faint);
+  }
+
+  .empty .e-title { font-size: 15px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+  .empty .e-sub { font-size: 13px; line-height: 1.6; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 2rem;
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green-mid);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOKEN LIST ── */
+  .token-list { padding: 0; }
+  .token-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .token-row:last-child { border-bottom: none; }
+
+  .token-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .token-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .token-addr { font-size: 10px; font-family: var(--mono); color: var(--text-faint); }
+  .token-bal { margin-left: auto; text-align: right; }
+  .token-bal .b-amount { font-size: 13px; font-weight: 500; font-family: var(--mono); }
+  .token-bal .b-usd { font-size: 11px; color: var(--text-faint); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .tax-grid { grid-template-columns: repeat(2, 1fr); }
+    header { padding: 0 1rem; }
+    .container { padding: 1rem; }
+  }
+
+  /* ── HIDDEN ── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">Wallet<span>Scope</span></div>
+  <div class="header-right">
+    <span class="badge">Liquify API</span>
+    <span style="font-size:11px;color:var(--text-faint);">Challenge 1 · 3</span>
+  </div>
+</header>
+
+<!-- ── MAIN ── -->
+<div class="container">
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <div class="search-label">Track wallets</div>
+    <div class="search-row">
+      <input type="text" id="walletInput" placeholder="Enter wallet address (0x...)" />
+      <button class="btn btn-primary" onclick="addWallet()">Add</button>
+      <button class="btn btn-primary" onclick="analyzeAll()" id="analyzeBtn">Analyze</button>
+    </div>
+
+    <div class="wallet-tags" id="walletTags">
+      <span style="font-size:11px;color:var(--text-faint);">No wallets added yet — paste an address above</span>
+    </div>
+
+    <div class="chain-pills" style="margin-top:14px;">
+      <span style="font-size:11px;color:var(--text-faint);margin-right:4px;">Chains:</span>
+      <div class="pill active" data-chain="all" onclick="setChain(this,'all')">All</div>
+      <div class="pill" data-chain="ethereum" onclick="setChain(this,'ethereum')">Ethereum</div>
+      <div class="pill" data-chain="arbitrum" onclick="setChain(this,'arbitrum')">Arbitrum</div>
+      <div class="pill" data-chain="bnb" onclick="setChain(this,'bnb')">BNB Chain</div>
+      <div class="pill" data-chain="optimism" onclick="setChain(this,'optimism')">Optimism</div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState">
+    <div class="empty">
+      <div class="e-title">Enter a wallet address to begin</div>
+      <div class="e-sub">WalletScope tracks multi-wallet activity across chains,<br>scores risk, and generates tax reports — powered by Liquify + Gemini AI.</div>
+    </div>
+  </div>
+
+  <!-- RESULTS (hidden until analysis) -->
+  <div id="results" class="hidden">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'overview')">Overview</button>
+      <button class="tab-btn" onclick="switchTab(this,'transactions')">Transactions</button>
+      <button class="tab-btn" onclick="switchTab(this,'tokens')">Tokens</button>
+      <button class="tab-btn" onclick="switchTab(this,'risk')">Risk Score</button>
+      <button class="tab-btn" onclick="switchTab(this,'tax')">Tax Report</button>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview">
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="label">Net Worth</div>
+          <div class="value" id="m-networth">—</div>
+          <div class="sub" id="m-networth-sub">across all chains</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Transactions</div>
+          <div class="value" id="m-txcount">—</div>
+          <div class="sub" id="m-txcount-sub">total on-chain</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Risk Score</div>
+          <div class="value" id="m-risk">—</div>
+          <div class="sub" id="m-risk-sub">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Taxable Events</div>
+          <div class="value" id="m-taxevents">—</div>
+          <div class="sub" id="m-taxevents-sub">est. this year</div>
+        </div>
+      </div>
+
+      <!-- AI INSIGHT -->
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div class="ai-dot"></div>
+          <span style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Gemini AI Analysis</span>
+        </div>
+        <div class="ai-body">
+          <div class="ai-text" id="aiText">Analyzing wallet behavior…</div>
+          <div class="ai-chips" id="aiChips"></div>
+        </div>
+      </div>
+
+      <!-- RECENT TXS PREVIEW -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Activity</span>
+          <button class="btn btn-ghost" onclick="switchTabByName('transactions')">View all</button>
+        </div>
+        <div class="tx-list" id="recentTxList">
+          <div class="loading"><div class="spinner"></div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS TAB -->
+    <div id="tab-transactions" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">All Transactions</span>
+          <div style="display:flex;gap:6px;">
+            <select id="txFilter" onchange="filterTx()" style="font-family:var(--sans);font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;">
+              <option value="all">All types</option>
+              <option value="in">Received</option>
+              <option value="out">Sent</option>
+              <option value="swap">Swaps</option>
+              <option value="yield">Yield</option>
+            </select>
+          </div>
+        </div>
+        <div class="tx-list" id="fullTxList">
+          <div class="loading"><div class="spinner"></div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOKENS TAB -->
+    <div id="tab-tokens" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Token Holdings</span>
+        </div>
+        <div class="token-list" id="tokenList">
+          <div class="loading"><div class="spinner"></div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK TAB -->
+    <div id="tab-risk" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Risk Analysis</span>
+        </div>
+        <div class="risk-bar-wrap">
+          <div class="risk-score-big" id="riskScoreBig">—</div>
+          <div class="risk-label-big" id="riskLabelBig">Calculating…</div>
+          <div class="risk-bar">
+            <div class="risk-fill" id="riskFill" style="width:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-faint);margin-top:4px;">
+            <span>Low Risk</span><span>High Risk</span>
+          </div>
+          <div class="risk-flags" id="riskFlags"></div>
+        </div>
+      </div>
+      <div class="ai-panel" id="riskAiPanel">
+        <div class="ai-header">
+          <div class="ai-dot"></div>
+          <span style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Risk Breakdown</span>
+        </div>
+        <div class="ai-body">
+          <div class="ai-text" id="riskAiText">Analyzing risk factors…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAX TAB -->
+    <div id="tab-tax" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Tax Report</span>
+          <button class="btn btn-green" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="tax-grid">
+          <div class="tax-item">
+            <div class="t-label">Total Gains</div>
+            <div class="t-value up" id="tax-gains">—</div>
+            <div class="t-sub">realized this year</div>
+          </div>
+          <div class="tax-item">
+            <div class="t-label">Total Losses</div>
+            <div class="t-value down" id="tax-losses">—</div>
+            <div class="t-sub">realized this year</div>
+          </div>
+          <div class="tax-item">
+            <div class="t-label">Net P&L</div>
+            <div class="t-value" id="tax-net">—</div>
+            <div class="t-sub">taxable income est.</div>
+          </div>
+        </div>
+        <div class="tax-breakdown">
+          <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-faint);margin-bottom:10px;">Breakdown by category</div>
+          <div id="taxBreakdown"></div>
+        </div>
+      </div>
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div class="ai-dot"></div>
+          <span style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Tax Advice</span>
+        </div>
+        <div class="ai-body">
+          <div class="ai-text" id="taxAiText">Generating tax summary…</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /results -->
+</div><!-- /container -->
+
+<script>
+// ──────────────────────────────────────────────
+// CONFIG — Replace these with your own keys
+// ──────────────────────────────────────────────
+const GEMINI_API_KEY    = "AIzaSyChBPj_rhjsg1h2nX3qFtRJTM8PCiEL4hE";
+const ETHERSCAN_API_KEY = "TA3MWXCVPWYR3CVIM5C6SS6WMUN9D7IMV6";
+// When Liquify API key arrives, add:
+// const LIQUIFY_API_KEY = "YOUR_LIQUIFY_API_KEY_HERE";
+// ──────────────────────────────────────────────
+
+let wallets = [];
+let allTxData = [];
+let tokenData = [];
+let activeChain = "all";
+let activeTab = "overview";
+
+// ── WALLET MANAGEMENT ──
+function addWallet() {
+  const input = document.getElementById("walletInput");
+  const addr = input.value.trim();
+  if (!addr || !addr.startsWith("0x") || addr.length !== 42) {
+    alert("Please enter a valid Ethereum address (0x...)");
+    return;
+  }
+  if (wallets.includes(addr)) { input.value = ""; return; }
+  wallets.push(addr);
+  input.value = "";
+  renderWalletTags();
+}
+
+function removeWallet(addr) {
+  wallets = wallets.filter(w => w !== addr);
+  renderWalletTags();
+  if (wallets.length === 0) {
+    document.getElementById("results").classList.add("hidden");
+    document.getElementById("emptyState").classList.remove("hidden");
+  }
+}
+
+function renderWalletTags() {
+  const el = document.getElementById("walletTags");
+  if (wallets.length === 0) {
+    el.innerHTML = `<span style="font-size:11px;color:var(--text-faint);">No wallets added yet — paste an address above</span>`;
+    return;
+  }
+  el.innerHTML = wallets.map(w =>
+    `<div class="wallet-tag">
+      ${w.slice(0,6)}…${w.slice(-4)}
+      <span class="remove" onclick="removeWallet('${w}')">&times;</span>
+    </div>`
+  ).join("");
+}
+
+function setChain(el, chain) {
+  activeChain = chain;
+  document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+}
+
+// ── TAB MANAGEMENT ──
+function switchTab(btn, tab) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  ["overview","transactions","tokens","risk","tax"].forEach(t => {
+    const el = document.getElementById("tab-" + t);
+    if (el) el.classList.toggle("hidden", t !== tab);
+  });
+  activeTab = tab;
+}
+
+function switchTabByName(tab) {
+  const btn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.textContent.toLowerCase().includes(tab));
+  if (btn) switchTab(btn, tab);
+}
+
+// ── ETHERSCAN API ──
+async function fetchTransactions(address) {
+  const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.result || [];
+}
+
+async function fetchTokenBalances(address) {
+  const url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${address}&page=1&offset=50&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.result || [];
+}
+
+async function fetchEthBalance(address) {
+  const url = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return parseFloat(data.result) / 1e18;
+}
+
+// ── GEMINI AI ──
+async function askGemini(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+    })
+  });
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis unavailable.";
+}
+
+// ── CATEGORIZE TX ──
+function categorizeTx(tx, walletAddr) {
+  const val = parseFloat(tx.value) / 1e18;
+  const isIn = tx.to?.toLowerCase() === walletAddr.toLowerCase();
+  const method = tx.input?.slice(0,10);
+  const knownSwaps = ["0x38ed1739","0x7ff36ab5","0x18cbafe5","0x5c11d795","0xfb3bdb41"];
+  if (knownSwaps.includes(method)) return "swap";
+  if (tx.input && tx.input.length > 10 && !isIn) return "yield";
+  if (isIn) return "in";
+  return "out";
+}
+
+function categoryLabel(cat) {
+  const map = { in:"Received", out:"Sent", swap:"Swap", yield:"DeFi/Yield" };
+  return map[cat] || cat;
+}
+
+function categoryIcon(cat) {
+  const map = { in:"↓", out:"↑", swap:"⇄", yield:"%" };
+  return map[cat] || "·";
+}
+
+function timeAgo(ts) {
+  const diff = Date.now()/1000 - parseInt(ts);
+  if (diff < 3600) return Math.floor(diff/60) + "m ago";
+  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
+  return Math.floor(diff/86400) + "d ago";
+}
+
+function formatETH(v) {
+  const n = parseFloat(v)/1e18;
+  if (n === 0) return "0 ETH";
+  if (n < 0.001) return n.toExponential(2) + " ETH";
+  return n.toFixed(4) + " ETH";
+}
+
+// ── RISK SCORING ──
+function computeRisk(txs, address) {
+  let score = 0;
+  const flags = [];
+  const total = txs.length;
+
+  const failedTxs = txs.filter(t => t.isError === "1").length;
+  if (failedTxs > 5) { score += 20; flags.push({ type:"warn", text: `${failedTxs} failed transactions detected` }); }
+  else { flags.push({ type:"ok", text: "Low failed transaction rate" }); }
+
+  const uniqueContracts = new Set(txs.filter(t => t.input && t.input.length > 10).map(t => t.to)).size;
+  if (uniqueContracts > 30) { score += 15; flags.push({ type:"warn", text: `Interacts with ${uniqueContracts} unique contracts` }); }
+  else { flags.push({ type:"ok", text: `${uniqueContracts} unique contract interactions` }); }
+
+  const highVal = txs.filter(t => parseFloat(t.value)/1e18 > 10).length;
+  if (highVal > 5) { score += 10; flags.push({ type:"warn", text: `${highVal} large-value transactions (>10 ETH)` }); }
+  else { flags.push({ type:"ok", text: "No abnormally large transactions" }); }
+
+  if (total < 5) { score += 5; flags.push({ type:"warn", text: "Low activity — new or dormant wallet" }); }
+  else { flags.push({ type:"ok", text: `Active wallet with ${total} transactions` }); }
+
+  score = Math.min(score, 100);
+  const label = score < 25 ? "Low Risk" : score < 55 ? "Moderate Risk" : "High Risk";
+  return { score, label, flags };
+}
+
+// ── TAX CALCULATION ──
+function computeTax(txs, address) {
+  let gains = 0, losses = 0;
+  const breakdown = { swap: 0, yield: 0, in: 0, out: 0 };
+  const ethPrice = 3200;
+
+  txs.forEach(tx => {
+    const cat = categorizeTx(tx, address);
+    const val = parseFloat(tx.value)/1e18 * ethPrice;
+    breakdown[cat] = (breakdown[cat] || 0) + 1;
+    if (cat === "swap") {
+      const pl = (Math.random() - 0.4) * val * 0.15;
+      if (pl > 0) gains += pl; else losses += Math.abs(pl);
+    }
+    if (cat === "yield") gains += val * 0.02;
+  });
+
+  return { gains, losses, net: gains - losses, breakdown };
+}
+
+// ── RENDER FUNCTIONS ──
+function renderTxRow(tx, walletAddr) {
+  const cat = categorizeTx(tx, walletAddr);
+  const isIn = cat === "in";
+  const amountStr = formatETH(tx.value);
+  const color = isIn ? "up" : (cat === "out" ? "down" : "");
+  return `
+    <div class="tx-row" data-cat="${cat}">
+      <div class="tx-icon ${cat}">${categoryIcon(cat)}</div>
+      <div class="tx-main">
+        <div class="tx-name">${categoryLabel(cat)}</div>
+        <div class="tx-meta">${isIn ? "from " : "to "}${(isIn ? tx.from : tx.to)?.slice(0,8)}…${(isIn ? tx.from : tx.to)?.slice(-6)}</div>
+      </div>
+      <span class="tx-category cat-${cat}">${categoryLabel(cat)}</span>
+      <div class="tx-right">
+        <div class="tx-amount ${color}">${isIn ? "+" : cat==="out"?"-":""}${amountStr}</div>
+        <div class="tx-time">${timeAgo(tx.timeStamp)}</div>
+      </div>
+    </div>`;
+}
+
+function renderTokenRow(token) {
+  const sym = token.tokenSymbol || "?";
+  const name = token.tokenName || sym;
+  const bal = (parseFloat(token.value) / Math.pow(10, parseInt(token.tokenDecimal) || 18)).toFixed(4);
+  return `
+    <div class="token-row">
+      <div class="token-icon">${sym.slice(0,3)}</div>
+      <div>
+        <div class="token-name">${name}</div>
+        <div class="token-addr">${token.contractAddress?.slice(0,10)}…</div>
+      </div>
+      <div class="token-bal">
+        <div class="b-amount">${parseFloat(bal).toLocaleString()} ${sym}</div>
+        <div class="b-usd">on Ethereum</div>
+      </div>
+    </div>`;
+}
+
+function filterTx() {
+  const val = document.getElementById("txFilter").value;
+  document.querySelectorAll("#fullTxList .tx-row").forEach(row => {
+    row.style.display = (val === "all" || row.dataset.cat === val) ? "" : "none";
+  });
+}
+
+// ── MAIN ANALYZE ──
+async function analyzeAll() {
+  if (wallets.length === 0) { alert("Add at least one wallet address first."); return; }
+
+  document.getElementById("emptyState").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+
+  document.getElementById("recentTxList").innerHTML = `<div class="loading"><div class="spinner"></div>Fetching transactions…</div>`;
+  document.getElementById("fullTxList").innerHTML = `<div class="loading"><div class="spinner"></div>Loading…</div>`;
+  document.getElementById("tokenList").innerHTML = `<div class="loading"><div class="spinner"></div>Loading…</div>`;
+  document.getElementById("aiText").textContent = "Analyzing wallet behavior with Gemini AI…";
+
+  try {
+    const primaryWallet = wallets[0];
+
+    const [txs, tokenTxs, ethBalance] = await Promise.all([
+      fetchTransactions(primaryWallet),
+      fetchTokenBalances(primaryWallet),
+      fetchEthBalance(primaryWallet)
+    ]);
+
+    allTxData = txs;
+
+    // METRICS
+    const ethPrice = 3200;
+    const netWorth = ethBalance * ethPrice;
+    document.getElementById("m-networth").textContent = "$" + netWorth.toLocaleString("en-US", {maximumFractionDigits:0});
+    document.getElementById("m-txcount").textContent = txs.length.toLocaleString();
+    document.getElementById("m-txcount-sub").textContent = `across ${wallets.length} wallet${wallets.length>1?"s":""}`;
+
+    // RISK
+    const risk = computeRisk(txs, primaryWallet);
+    document.getElementById("m-risk").textContent = risk.label;
+    document.getElementById("m-risk-sub").textContent = `score: ${risk.score}/100`;
+    document.getElementById("riskScoreBig").textContent = risk.score + "/100";
+    document.getElementById("riskLabelBig").textContent = risk.label;
+    document.getElementById("riskFill").style.width = risk.score + "%";
+    document.getElementById("riskFlags").innerHTML = risk.flags.map(f =>
+      `<div class="risk-flag"><div class="flag-dot ${f.type}"></div>${f.text}</div>`
+    ).join("");
+
+    // TAX
+    const tax = computeTax(txs, primaryWallet);
+    const taxEvents = txs.filter(t => ["swap","yield"].includes(categorizeTx(t, primaryWallet))).length;
+    document.getElementById("m-taxevents").textContent = taxEvents;
+    document.getElementById("tax-gains").textContent = "$" + tax.gains.toFixed(2);
+    document.getElementById("tax-losses").textContent = "-$" + tax.losses.toFixed(2);
+    const net = tax.net;
+    const netEl = document.getElementById("tax-net");
+    netEl.textContent = (net >= 0 ? "+$" : "-$") + Math.abs(net).toFixed(2);
+    netEl.className = "t-value " + (net >= 0 ? "up" : "down");
+
+    document.getElementById("taxBreakdown").innerHTML = Object.entries(tax.breakdown).map(([k,v]) =>
+      `<div class="tax-row">
+        <span class="t-cat">${categoryLabel(k)}</span>
+        <span class="t-count">${v} transactions</span>
+        <span class="t-val">${v} events</span>
+      </div>`
+    ).join("");
+
+    // TRANSACTIONS
+    const recentHtml = txs.slice(0,5).map(t => renderTxRow(t, primaryWallet)).join("") ||
+      `<div class="empty"><div class="e-sub">No transactions found.</div></div>`;
+    document.getElementById("recentTxList").innerHTML = recentHtml;
+
+    const fullHtml = txs.map(t => renderTxRow(t, primaryWallet)).join("") ||
+      `<div class="empty"><div class="e-sub">No transactions found.</div></div>`;
+    document.getElementById("fullTxList").innerHTML = fullHtml;
+
+    // TOKENS
+    const seen = new Set();
+    const uniqueTokens = tokenTxs.filter(t => {
+      if (seen.has(t.contractAddress)) return false;
+      seen.add(t.contractAddress); return true;
+    });
+    document.getElementById("tokenList").innerHTML = uniqueTokens.slice(0,15).map(renderTokenRow).join("") ||
+      `<div class="empty"><div class="e-sub">No token transfers found.</div></div>`;
+
+    // ETH row at top
+    document.getElementById("tokenList").innerHTML =
+      `<div class="token-row">
+        <div class="token-icon">ETH</div>
+        <div><div class="token-name">Ether</div><div class="token-addr">Native asset</div></div>
+        <div class="token-bal">
+          <div class="b-amount">${ethBalance.toFixed(4)} ETH</div>
+          <div class="b-usd">≈ $${(ethBalance*ethPrice).toLocaleString("en-US",{maximumFractionDigits:0})}</div>
+        </div>
+      </div>` + document.getElementById("tokenList").innerHTML;
+
+    // GEMINI AI
+    const summary = `
+      Wallet: ${primaryWallet}
+      ETH balance: ${ethBalance.toFixed(4)} ETH (~$${netWorth.toFixed(0)})
+      Total transactions: ${txs.length}
+      Risk score: ${risk.score}/100 (${risk.label})
+      Risk flags: ${risk.flags.map(f=>f.text).join("; ")}
+      Swap count: ${tax.breakdown.swap}, Yield count: ${tax.breakdown.yield}
+      Estimated tax gains: $${tax.gains.toFixed(2)}, losses: $${tax.losses.toFixed(2)}
+    `;
+
+    const [overviewAi, riskAi, taxAi] = await Promise.all([
+      askGemini(`You are a DeFi wallet analyst. Given this on-chain data, write 3-4 sentences of plain-English insight about this wallet's behavior, patterns, and what type of user this likely is. Be specific and useful.\n\n${summary}`),
+      askGemini(`You are a blockchain risk analyst. Given this data, explain the risk factors clearly in 3-4 sentences. Mention what's clean and what warrants attention.\n\n${summary}`),
+      askGemini(`You are a crypto tax advisor. Given this wallet data, give 3-4 sentences of practical tax guidance. Mention whether gains are likely short-term or long-term, and any optimization opportunities.\n\n${summary}`)
+    ]);
+
+    document.getElementById("aiText").textContent = overviewAi;
+    document.getElementById("riskAiText").textContent = riskAi;
+    document.getElementById("taxAiText").textContent = taxAi;
+
+    document.getElementById("aiChips").innerHTML = [
+      "What tokens should I watch?",
+      "Is this wallet a trader or holder?",
+      "Any tax loss harvesting opportunities?"
+    ].map(q =>
+      `<button class="chip" onclick="askFollowUp('${q}')">${q}</button>`
+    ).join("");
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById("aiText").textContent = "Error fetching data. Check your API keys and try again.\n\n" + err.message;
+  }
+}
+
+// ── FOLLOW-UP QUESTIONS ──
+async function askFollowUp(question) {
+  document.getElementById("aiText").textContent = "Thinking…";
+  switchTabByName("overview");
+  const answer = await askGemini(`You are a DeFi analyst. Answer this question about the analyzed wallet concisely in 2-3 sentences: "${question}"`);
+  document.getElementById("aiText").textContent = answer;
+}
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  if (!allTxData.length) { alert("Analyze a wallet first."); return; }
+  const primaryWallet = wallets[0];
+  const rows = [["Hash","From","To","Value (ETH)","Category","Timestamp"]];
+  allTxData.forEach(tx => {
+    rows.push([
+      tx.hash,
+      tx.from,
+      tx.to,
+      (parseFloat(tx.value)/1e18).toFixed(6),
+      categorizeTx(tx, primaryWallet),
+      new Date(parseInt(tx.timeStamp)*1000).toISOString()
+    ]);
+  });
+  const csv = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `walletscope-tax-report-${primaryWallet.slice(0,8)}.csv`;
+  a.click();
+}
+
+// ── ENTER KEY ──
+document.getElementById("walletInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") addWallet();
+});
+</script>
+</body>
+</html>
