@@ -490,25 +490,32 @@ function switchTabByName(tab) {
 
 // ── API CALLS — keys live on server ──
 async function fetchWallet(address, type) {
-  const res = await fetch(`/api/wallet?address=${address}&type=${type}`);
-  const data = await res.json();
-  return data.result || [];
+  try {
+    const res = await fetch(`/api/wallet?address=${address}&type=${type}`);
+    const data = await res.json();
+    return Array.isArray(data.result) ? data.result : [];
+  } catch(e) { return []; }
 }
 
 async function fetchBalance(address) {
-  const res = await fetch(`/api/wallet?address=${address}&type=balance`);
-  const data = await res.json();
-  return parseFloat(data.result) / 1e18;
+  try {
+    const res = await fetch(`/api/wallet?address=${address}&type=balance`);
+    const data = await res.json();
+    const raw = parseFloat(data.result);
+    return isNaN(raw) ? 0 : raw / 1e18;
+  } catch(e) { return 0; }
 }
 
 async function askGemini(prompt) {
-  const res = await fetch("/api/gemini", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  const data = await res.json();
-  return data.text || "Analysis unavailable.";
+  try {
+    const res = await fetch("/api/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    return data.text || "Analysis unavailable.";
+  } catch(e) { return "AI analysis unavailable. Check API key."; }
 }
 
 // ── HELPERS ──

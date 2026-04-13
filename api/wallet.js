@@ -23,8 +23,14 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(url);
     const data = await response.json();
+    // Normalize: always return { result, status }
+    // If result is not array for list types, return empty array
+    if (type === "txlist" || type === "tokentx") {
+      const result = Array.isArray(data.result) ? data.result : [];
+      return res.status(200).json({ status: "1", result });
+    }
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, result: [] });
   }
 }
