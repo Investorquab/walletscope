@@ -651,7 +651,8 @@ async function analyzeAll() {
     const ethPrice = await fetchEthPrice();
     const netWorth = ethBalance * ethPrice;
 
-    document.getElementById("m-networth").textContent = "$" + netWorth.toLocaleString("en-US",{maximumFractionDigits:0});
+    const networthDisplay = netWorth < 1 ? "$" + netWorth.toFixed(4) : "$" + netWorth.toLocaleString("en-US",{maximumFractionDigits:2});
+    document.getElementById("m-networth").textContent = networthDisplay;
     document.getElementById("m-txcount").textContent = txs.length.toLocaleString();
     document.getElementById("m-txcount-sub").textContent = `across ${wallets.length} wallet${wallets.length>1?"s":""}`;
 
@@ -678,13 +679,26 @@ async function analyzeAll() {
     document.getElementById("recentTxList").innerHTML = txs.slice(0,5).map(t=>renderTxRow(t,primary)).join("") || `<div class="empty"><div class="e-sub">No transactions found.</div></div>`;
     document.getElementById("fullTxList").innerHTML = txs.map(t=>renderTxRow(t,primary)).join("") || `<div class="empty"><div class="e-sub">No transactions found.</div></div>`;
 
-    const seen = new Set();
-    const uniqueTokens = tokenTxs.filter(t => { if(seen.has(t.contractAddress)) return false; seen.add(t.contractAddress); return true; });
-    const ethRow = `<div class="token-row"><div class="token-icon">ETH</div><div><div class="token-name">Ether</div><div class="token-addr">Native asset</div></div><div class="token-bal"><div class="b-amount">${ethBalance.toFixed(4)} ETH</div><div class="b-usd">≈ $${(ethBalance*ethPrice).toLocaleString("en-US",{maximumFractionDigits:0})}</div></div></div>`;
-    document.getElementById("tokenList").innerHTML = ethRow + uniqueTokens.slice(0,15).map(t => {
-      const sym = t.tokenSymbol||"?"; const bal = (parseFloat(t.value)/Math.pow(10,parseInt(t.tokenDecimal)||18)).toFixed(4);
-      return `<div class="token-row"><div class="token-icon">${sym.slice(0,3)}</div><div><div class="token-name">${t.tokenName||sym}</div><div class="token-addr">${t.contractAddress?.slice(0,10)}…</div></div><div class="token-bal"><div class="b-amount">${parseFloat(bal).toLocaleString()} ${sym}</div><div class="b-usd">on Ethereum</div></div></div>`;
-    }).join("");
+    // Calculate net token balances (in - out) to show only current holdings
+    const tokenBalances = {};
+    tokenTxs.forEach(t => {
+      const addr = t.contractAddress;
+      const decimals = parseInt(t.tokenDecimal) || 18;
+      const amount = parseFloat(t.value) / Math.pow(10, decimals);
+      if (!tokenBalances[addr]) tokenBalances[addr] = { sym: t.tokenSymbol||"?", name: t.tokenName||t.tokenSymbol||"?", addr, balance: 0, decimals };
+      if (t.to?.toLowerCase() === primary.toLowerCase()) tokenBalances[addr].balance += amount;
+      else tokenBalances[addr].balance -= amount;
+    });
+    const currentTokens = Object.values(tokenBalances)
+      .filter(t => t.balance > 0.0001)
+      .sort((a,b) => b.balance - a.balance)
+      .slice(0, 15);
+    const chainLabel = activeChain === "all" ? "Ethereum" : activeChain.charAt(0).toUpperCase()+activeChain.slice(1);
+    const ethRow = `<div class="token-row"><div class="token-icon">ETH</div><div><div class="token-name">Ether</div><div class="token-addr">Native asset</div></div><div class="token-bal"><div class="b-amount">${ethBalance.toFixed(6)} ETH</div><div class="b-usd">≈ $${(ethBalance*ethPrice).toLocaleString("en-US",{maximumFractionDigits:2})}</div></div></div>`;
+    document.getElementById("tokenList").innerHTML = ethRow + (currentTokens.length ? currentTokens.map(t => {
+      const bal = t.balance < 0.0001 ? t.balance.toExponential(2) : t.balance.toLocaleString("en-US",{maximumFractionDigits:4});
+      return `<div class="token-row"><div class="token-icon">${t.sym.slice(0,3)}</div><div><div class="token-name">${t.name}</div><div class="token-addr">${t.addr?.slice(0,10)}…</div></div><div class="token-bal"><div class="b-amount">${bal} ${t.sym}</div><div class="b-usd">on ${chainLabel}</div></div></div>`;
+    }).join("") : `<div style="padding:1rem 18px;font-size:13px;color:var(--text-faint);">No current token holdings found on this chain.</div>`);
 
     const summary = `Wallet: ${primary} | ETH: ${ethBalance.toFixed(4)} (~$${netWorth.toFixed(0)}) | Txs: ${txs.length} | Risk: ${risk.score}/100 (${risk.label}) | Flags: ${risk.flags.map(f=>f.text).join("; ")} | Swaps: ${tax.breakdown.swap} | Yield: ${tax.breakdown.yield} | Gains: $${tax.gains.toFixed(2)} | Losses: $${tax.losses.toFixed(2)}`;
 
