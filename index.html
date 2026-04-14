@@ -472,6 +472,7 @@ function setChain(el, chain) {
   activeChain = chain;
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
   el.classList.add("active");
+  if (wallets.length > 0) analyzeAll();
 }
 
 function switchTab(btn, tab) {
@@ -491,7 +492,8 @@ function switchTabByName(tab) {
 // ── API CALLS — keys live on server ──
 async function fetchWallet(address, type) {
   try {
-    const res = await fetch(`/api/wallet?address=${address}&type=${type}`);
+    const chain = activeChain === "all" ? "ethereum" : activeChain;
+    const res = await fetch(`/api/wallet?address=${address}&type=${type}&chain=${chain}`);
     const data = await res.json();
     return Array.isArray(data.result) ? data.result : [];
   } catch(e) { return []; }
@@ -499,11 +501,21 @@ async function fetchWallet(address, type) {
 
 async function fetchBalance(address) {
   try {
-    const res = await fetch(`/api/wallet?address=${address}&type=balance`);
+    const chain = activeChain === "all" ? "ethereum" : activeChain;
+    const res = await fetch(`/api/wallet?address=${address}&type=balance&chain=${chain}`);
     const data = await res.json();
     const raw = parseFloat(data.result);
     return isNaN(raw) ? 0 : raw / 1e18;
   } catch(e) { return 0; }
+}
+
+async function fetchEthPrice() {
+  try {
+    const res = await fetch(`/api/wallet?address=0x0&type=ethprice&chain=ethereum`);
+    const data = await res.json();
+    const price = parseFloat(data?.result?.ethusd);
+    return isNaN(price) ? 3200 : price;
+  } catch(e) { return 3200; }
 }
 
 async function askGemini(prompt) {
@@ -542,7 +554,8 @@ function timeAgo(ts) {
 function formatETH(v) {
   const n = parseFloat(v)/1e18;
   if (n === 0) return "0 ETH";
-  if (n < 0.001) return n.toExponential(2) + " ETH";
+  if (n < 0.000001) return n.toExponential(2) + " ETH";
+  if (n < 0.001) return n.toFixed(8) + " ETH";
   return n.toFixed(4) + " ETH";
 }
 
@@ -566,7 +579,7 @@ function computeRisk(txs, address) {
 function computeTax(txs, address) {
   let gains = 0, losses = 0;
   const breakdown = { swap: 0, yield: 0, in: 0, out: 0 };
-  const ethPrice = 3200;
+  const ethPrice = 3200; // approximate for tax
   txs.forEach(tx => {
     const cat = categorizeTx(tx, address);
     const val = parseFloat(tx.value)/1e18 * ethPrice;
@@ -635,7 +648,7 @@ async function analyzeAll() {
     ]);
     allTxData = txs;
 
-    const ethPrice = 3200;
+    const ethPrice = await fetchEthPrice();
     const netWorth = ethBalance * ethPrice;
 
     document.getElementById("m-networth").textContent = "$" + netWorth.toLocaleString("en-US",{maximumFractionDigits:0});
