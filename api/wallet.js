@@ -7,10 +7,18 @@ export default async function handler(req, res) {
   const { address, type, chain } = req.query;
   if (!address) return res.status(400).json({ error: "No address", result: [] });
 
-  const key = process.env.ETHERSCAN_API_KEY;
-  const chainMap = { ethereum: 1, arbitrum: 42161, bnb: 56, optimism: 10 };
-  const chainId = chainMap[chain] || 1;
-  const base = `https://api.etherscan.io/v2/api?chainid=${chainId}&apikey=${key}`;
+  const ethKey = process.env.ETHERSCAN_API_KEY;
+
+  // Different API endpoints per chain
+  const chainAPIs = {
+    ethereum: `https://api.etherscan.io/v2/api?chainid=1&apikey=${ethKey}`,
+    arbitrum: `https://api.etherscan.io/v2/api?chainid=42161&apikey=${ethKey}`,
+    bnb:      `https://api.bscscan.com/api?apikey=YourBscApiKey`,
+    optimism: `https://api.etherscan.io/v2/api?chainid=10&apikey=${ethKey}`,
+  };
+
+  const currentChain = chain || "ethereum";
+  const base = chainAPIs[currentChain] || chainAPIs.ethereum;
 
   let url = "";
   if (type === "txlist") {
@@ -20,7 +28,7 @@ export default async function handler(req, res) {
   } else if (type === "balance") {
     url = `${base}&module=account&action=balance&address=${address}&tag=latest`;
   } else if (type === "ethprice") {
-    url = `https://api.etherscan.io/v2/api?chainid=1&apikey=${key}&module=stats&action=ethprice`;
+    url = `https://api.etherscan.io/v2/api?chainid=1&apikey=${ethKey}&module=stats&action=ethprice`;
   } else {
     return res.status(400).json({ error: "Invalid type", result: [] });
   }
