@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     const raw = await response.text();
     let data;
     try { data = JSON.parse(raw); } catch(e) {
-      return res.status(200).json({ text: "Invalid response from Groq: " + raw.slice(0,100) });
+      return res.status(200).json({ text: "Invalid response: " + raw.slice(0,100) });
     }
 
     if (data.error) return res.status(200).json({ text: "Groq error: " + data.error.message });
