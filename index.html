@@ -256,11 +256,10 @@
 <div class="container">
 
   <div class="search-section">
-    <div class="search-label">Track wallets</div>
+    <div class="search-label">Track wallet</div>
     <div class="search-row">
       <input type="text" id="walletInput" placeholder="Enter wallet address (0x...)" />
-      <button class="btn btn-primary" onclick="addWallet()">Add</button>
-      <button class="btn btn-primary" onclick="analyzeAll()">Analyze</button>
+      <button class="btn btn-primary" onclick="analyzeOne()">Analyze</button>
     </div>
     <div class="wallet-tags" id="walletTags">
       <span style="font-size:11px;color:var(--text-faint);">No wallets added yet — paste an address above</span>
@@ -461,7 +460,7 @@ function removeWallet(addr) {
 function renderWalletTags() {
   const el = document.getElementById("walletTags");
   if (wallets.length === 0) {
-    el.innerHTML = `<span style="font-size:11px;color:var(--text-faint);">No wallets added yet</span>`; return;
+    el.innerHTML = `<span style="font-size:11px;color:var(--text-faint);">Enter an address above and click Analyze</span>`; return;
   }
   el.innerHTML = wallets.map(w =>
     `<div class="wallet-tag">${w.slice(0,6)}…${w.slice(-4)}<span class="remove" onclick="removeWallet('${w}')">&times;</span></div>`
@@ -647,6 +646,17 @@ function exportCSV() {
 }
 
 // ── MAIN ──
+async function analyzeOne() {
+  const input = document.getElementById("walletInput");
+  const addr = input.value.trim();
+  if (!addr || !addr.startsWith("0x") || addr.length !== 42) {
+    alert("Please enter a valid Ethereum address (0x...)"); return;
+  }
+  wallets = [addr];
+  renderWalletTags();
+  analyzeAll();
+}
+
 async function analyzeAll() {
   if (wallets.length === 0) { alert("Add at least one wallet address first."); return; }
   document.getElementById("emptyState").classList.add("hidden");
@@ -666,7 +676,12 @@ async function analyzeAll() {
     allTxData = txs;
 
     const ethPrice = await fetchEthPrice();
-    const netWorth = ethBalance * ethPrice;
+    const chainSymbols = { ethereum:"ETH", arbitrum:"ETH", bnb:"BNB", optimism:"ETH" };
+    const chainPrices = { ethereum: ethPrice, arbitrum: ethPrice, bnb: 600, optimism: ethPrice };
+    const currentChain = activeChain === "all" ? "ethereum" : activeChain;
+    const nativeSymbol = chainSymbols[currentChain] || "ETH";
+    const nativePrice = chainPrices[currentChain] || ethPrice;
+    const netWorth = ethBalance * nativePrice;
 
     const networthDisplay = netWorth < 1 ? "$" + netWorth.toFixed(4) : "$" + netWorth.toLocaleString("en-US",{maximumFractionDigits:2});
     document.getElementById("m-networth").textContent = networthDisplay;
@@ -711,7 +726,7 @@ async function analyzeAll() {
       .sort((a,b) => b.balance - a.balance)
       .slice(0, 15);
     const chainLabel = activeChain === "all" ? "Ethereum" : activeChain.charAt(0).toUpperCase()+activeChain.slice(1);
-    const ethRow = `<div class="token-row"><div class="token-icon">ETH</div><div><div class="token-name">Ether</div><div class="token-addr">Native asset</div></div><div class="token-bal"><div class="b-amount">${ethBalance.toFixed(6)} ETH</div><div class="b-usd">≈ $${(ethBalance*ethPrice).toLocaleString("en-US",{maximumFractionDigits:2})}</div></div></div>`;
+    const ethRow = `<div class="token-row"><div class="token-icon">${nativeSymbol}</div><div><div class="token-name">${currentChain === "bnb" ? "BNB" : "Ether"}</div><div class="token-addr">Native asset</div></div><div class="token-bal"><div class="b-amount">${ethBalance.toFixed(6)} ${nativeSymbol}</div><div class="b-usd">≈ $${(ethBalance*nativePrice).toLocaleString("en-US",{maximumFractionDigits:2})}</div></div></div>`;
     document.getElementById("tokenList").innerHTML = ethRow + (currentTokens.length ? currentTokens.map(t => {
       const bal = t.balance < 0.0001 ? t.balance.toExponential(2) : t.balance.toLocaleString("en-US",{maximumFractionDigits:4});
       return `<div class="token-row"><div class="token-icon">${t.sym.slice(0,3)}</div><div><div class="token-name">${t.name}</div><div class="token-addr">${t.addr?.slice(0,10)}…</div></div><div class="token-bal"><div class="b-amount">${bal} ${t.sym}</div><div class="b-usd">on ${chainLabel}</div></div></div>`;
