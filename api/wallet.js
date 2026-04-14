@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const { address, type } = req.query;
-  if (!address) return res.status(400).json({ error: "No address provided" });
+  if (!address) return res.status(400).json({ error: "No address provided", result: [] });
 
   const key = process.env.ETHERSCAN_API_KEY;
   let url = "";
@@ -17,18 +17,22 @@ export default async function handler(req, res) {
   } else if (type === "balance") {
     url = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${key}`;
   } else {
-    return res.status(400).json({ error: "Invalid type" });
+    return res.status(400).json({ error: "Invalid type", result: [] });
   }
 
   try {
     const response = await fetch(url);
-    const data = await response.json();
-    // Normalize: always return { result, status }
-    // If result is not array for list types, return empty array
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) {
+      return res.status(500).json({ error: "Invalid JSON from Etherscan", result: [] });
+    }
+
     if (type === "txlist" || type === "tokentx") {
       const result = Array.isArray(data.result) ? data.result : [];
       return res.status(200).json({ status: "1", result });
     }
+
     res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message, result: [] });
