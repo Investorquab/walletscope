@@ -561,17 +561,34 @@ function formatETH(v) {
 
 function computeRisk(txs, address) {
   let score = 0; const flags = [];
+
   const failedTxs = txs.filter(t => t.isError === "1").length;
-  if (failedTxs > 5) { score += 20; flags.push({ type:"warn", text: `${failedTxs} failed transactions detected` }); }
+  const failedRate = txs.length > 0 ? failedTxs / txs.length : 0;
+  if (failedTxs > 10 || failedRate > 0.2) { score += 25; flags.push({ type:"warn", text: `${failedTxs} failed transactions (${(failedRate*100).toFixed(0)}% fail rate)` }); }
+  else if (failedTxs > 3) { score += 10; flags.push({ type:"warn", text: `${failedTxs} failed transactions detected` }); }
   else { flags.push({ type:"ok", text: "Low failed transaction rate" }); }
+
   const uniqueContracts = new Set(txs.filter(t => t.input && t.input.length > 10).map(t => t.to)).size;
-  if (uniqueContracts > 30) { score += 15; flags.push({ type:"warn", text: `Interacts with ${uniqueContracts} unique contracts` }); }
+  if (uniqueContracts > 50) { score += 20; flags.push({ type:"bad", text: `High contract exposure: ${uniqueContracts} unique contracts` }); }
+  else if (uniqueContracts > 20) { score += 10; flags.push({ type:"warn", text: `Interacts with ${uniqueContracts} unique contracts` }); }
   else { flags.push({ type:"ok", text: `${uniqueContracts} unique contract interactions` }); }
+
   const highVal = txs.filter(t => parseFloat(t.value)/1e18 > 10).length;
-  if (highVal > 5) { score += 10; flags.push({ type:"warn", text: `${highVal} large-value transactions (>10 ETH)` }); }
+  if (highVal > 10) { score += 20; flags.push({ type:"bad", text: `${highVal} very large transactions (>10 ETH)` }); }
+  else if (highVal > 3) { score += 10; flags.push({ type:"warn", text: `${highVal} large-value transactions (>10 ETH)` }); }
   else { flags.push({ type:"ok", text: "No abnormally large transactions" }); }
-  if (txs.length < 5) { score += 5; flags.push({ type:"warn", text: "Low activity — new or dormant wallet" }); }
-  else { flags.push({ type:"ok", text: `Active wallet with ${txs.length} transactions` }); }
+
+  const outgoing = txs.filter(t => t.from?.toLowerCase() === address.toLowerCase()).length;
+  const incoming = txs.filter(t => t.to?.toLowerCase() === address.toLowerCase()).length;
+  if (txs.length < 5) { score += 10; flags.push({ type:"warn", text: "Low activity — new or dormant wallet" }); }
+  else if (outgoing > incoming * 3) { score += 15; flags.push({ type:"warn", text: "Mostly outgoing activity — possible drainer pattern" }); }
+  else { flags.push({ type:"ok", text: `Active wallet: ${incoming} in / ${outgoing} out` }); }
+
+  const rapidTxs = txs.filter((t,i) => i > 0 && Math.abs(parseInt(t.timeStamp) - parseInt(txs[i-1].timeStamp)) < 60).length;
+  if (rapidTxs > 10) { score += 20; flags.push({ type:"bad", text: `${rapidTxs} rapid transactions (possible bot activity)` }); }
+  else if (rapidTxs > 3) { score += 5; flags.push({ type:"warn", text: `${rapidTxs} rapid back-to-back transactions` }); }
+  else { flags.push({ type:"ok", text: "Normal transaction timing patterns" }); }
+
   score = Math.min(score, 100);
   return { score, label: score < 25 ? "Low Risk" : score < 55 ? "Moderate Risk" : "High Risk", flags };
 }
