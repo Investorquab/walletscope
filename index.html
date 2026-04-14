@@ -320,7 +320,7 @@
       <div class="ai-panel">
         <div class="ai-header">
           <div class="ai-dot"></div>
-          <span style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Gemini AI Analysis</span>
+          <span style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">AI Analysis</span>
         </div>
         <div class="ai-body">
           <div class="ai-text" id="aiText">Analyzing wallet behavior…</div>
@@ -520,7 +520,7 @@ async function fetchEthPrice() {
 
 async function askGemini(prompt) {
   try {
-    const res = await fetch("/api/gemini", {
+    const res = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt })
