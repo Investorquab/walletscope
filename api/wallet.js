@@ -8,14 +8,15 @@ export default async function handler(req, res) {
   if (!address) return res.status(400).json({ error: "No address provided", result: [] });
 
   const key = process.env.ETHERSCAN_API_KEY;
+  const base = `https://api.etherscan.io/v2/api?chainid=1&apikey=${key}`;
   let url = "";
 
   if (type === "txlist") {
-    url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${key}`;
+    url = `${base}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc`;
   } else if (type === "tokentx") {
-    url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${address}&page=1&offset=50&sort=desc&apikey=${key}`;
+    url = `${base}&module=account&action=tokentx&address=${address}&page=1&offset=50&sort=desc`;
   } else if (type === "balance") {
-    url = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${key}`;
+    url = `${base}&module=account&action=balance&address=${address}&tag=latest`;
   } else {
     return res.status(400).json({ error: "Invalid type", result: [] });
   }
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
     const text = await response.text();
     let data;
     try { data = JSON.parse(text); } catch(e) {
-      return res.status(500).json({ error: "Invalid JSON from Etherscan", result: [] });
+      return res.status(500).json({ error: "Invalid JSON", result: [] });
     }
 
     if (type === "txlist" || type === "tokentx") {
