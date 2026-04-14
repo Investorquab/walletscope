@@ -520,7 +520,7 @@ async function fetchEthPrice() {
 
 async function askGemini(prompt) {
   try {
-    const res = await fetch("/api/ai", {
+    const res = await fetch("/api/gemini", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt })
